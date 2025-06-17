@@ -184,4 +184,14 @@ MIT License
 
 - 作者：Jiachen Hu
 - 邮箱：jiachen.hu@zju.edu.cn
-- 项目主页：https://github.com/hhhjjjcc/JC-Phase-Picking-Agent 
+- 项目主页：https://github.com/hhhjjjcc/JC-Phase-Picking-Agent
+
+<div style="text-align: center;">
+  <img src="https://github.com/hhhjjjcc/JC-Phase-Picking-Agent/blob/main/Webpage1.png" width="70%">
+  <p><b>Figure 1: Example Webpage</p>
+</div>
+
+<div style="text-align: center;">
+  <img src="https://github.com/hhhjjjcc/JC-Phase-Picking-Agent/blob/main/Webpage2.png" width="70%">
+  <p><b>Figure 2: Example Webpage</p>
+</div>
