@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 环境变量和敏感信息
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv/
+.conda/
+
+# IDE相关
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# 日志
+*.log
+logs/
+
+# 上传的数据文件
+seismic_agent/data/uploads/*
+!seismic_agent/data/uploads/.gitkeep
+
+# 缓存
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 其他
+.DS_Store
+.ipynb_checkpoints 

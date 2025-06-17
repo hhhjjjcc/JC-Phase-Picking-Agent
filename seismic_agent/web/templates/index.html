@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地震学智能体震相拾取系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            margin: 30px auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+        .form-label {
+            font-weight: bold;
+        }
+        #waveformDisplay {
+            height: 400px; /* 设置波形显示区域的高度 */
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            background-color: #f9f9f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>地震学智能体震相拾取系统</h1>
+
+        <div class="card">
+            <div class="card-header">上传波形文件</div>
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="fileInput" class="form-label">选择文件</label>
+                        <input class="form-control" type="file" id="fileInput" name="file" accept=".mseed,.sac" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">上传</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">波形显示</div>
+            <div class="card-body">
+                <div id="waveformDisplay">
+                    <!-- 这里将显示波形图 -->
+                    <p>波形图将在此处显示。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">分析控制</div>
+            <div class="card-body">
+                <form id="analysisForm">
+                    <div class="mb-3">
+                        <label class="form-label">震相类型</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="phase_type" id="phaseTypeP" value="P">
+                                <label class="form-check-label" for="phaseTypeP">P波</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="phase_type" id="phaseTypeS" value="S">
+                                <label class="form-check-label" for="phaseTypeS">S波</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="phase_type" id="phaseTypeBoth" value="both" checked>
+                                <label class="form-check-label" for="phaseTypeBoth">两者</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">精度要求</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="precision" id="precisionHigh" value="high">
+                                <label class="form-check-label" for="precisionHigh">高精度</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="precision" id="precisionMedium" value="medium" checked>
+                                <label class="form-check-label" for="precisionMedium">中等精度</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="precision" id="precisionLow" value="low">
+                                <label class="form-check-label" for="precisionLow">低精度</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="analyzeButton">开始分析</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">智能体对话/反馈</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="userQueryInput" class="form-label">向智能体提问或描述需求</label>
+                    <textarea class="form-control" id="userQueryInput" rows="3" placeholder="例如：帮我分析这个地震记录的P波到时，并告诉我信噪比。"></textarea>
+                </div>
+                <div id="resultsDisplay">
+                    <!-- 这里将显示智能体的分析结果和反馈 -->
+                    <p>智能体分析结果将在此处显示。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script> <!-- 引入 Plotly.js，更新到2.20.0版本 -->
+    <script>
+        const socket = io();
+        let uploadedFilePath = null; // 新增：存储已上传的文件路径
+
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // 阻止表单默认提交行为
+
+            const formData = new FormData(this);
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length === 0) {
+                alert('请选择一个文件！');
+                return;
+            }
+
+            // 移除上传时直接发送分析参数，现在只上传文件
+            // formData.append('phase_type', document.querySelector('input[name="phase_type"]:checked').value);
+            // formData.append('precision', document.querySelector('input[name="precision"]:checked').value);
+            // const userQuery = document.getElementById('userQueryInput').value;
+            // formData.append('user_query', userQuery);
+
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || `HTTP错误: ${response.status} ${response.statusText}`);
+                    }).catch(() => {
+                        throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('文件上传后端返回数据:', data); // 打印完整的后端响应到控制台
+                
+                if (data.status === 'success') {
+                    uploadedFilePath = data.file_path; // 存储文件路径
+                    alert(data.message); // 显示上传成功消息
+                    // 立即显示波形图（不带拾取结果，因为分析是独立触发的）
+                    displayWaveform(uploadedFilePath, [], []); 
+
+                    // 清空之前的智能体回复区域，并提示用户可以进行分析
+                    const resultsDisplay = document.getElementById('resultsDisplay');
+                    resultsDisplay.innerHTML = '<p>文件上传成功，现在您可以选择分析参数或输入指令进行分析。</p>';
+
+                } else {
+                    alert('文件上传失败: ' + (data.message || '未知错误'));
+                }
+            })
+            .catch(error => {
+                console.error('文件上传失败:', error);
+                alert('文件上传失败: ' + error.message);
+                const resultsDisplay = document.getElementById('resultsDisplay');
+                resultsDisplay.innerHTML = `<p style="color: red;">文件上传失败: ${error.message}</p>`;
+            });
+        });
+
+        // *** 独立分析请求函数 ***
+        async function performAnalysis() {
+            if (!uploadedFilePath) {
+                alert('请先上传波形文件！');
+                return;
+            }
+
+            const phaseType = document.querySelector('input[name="phase_type"]:checked').value;
+            const precision = document.querySelector('input[name="precision"]:checked').value;
+            const userQuery = document.getElementById('userQueryInput').value;
+
+            const resultsDisplay = document.getElementById('resultsDisplay');
+            resultsDisplay.innerHTML = '<p>正在分析中，请稍候...</p>';
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        file_path: uploadedFilePath,
+                        phase_type: phaseType,
+                        precision: precision,
+                        user_query: userQuery
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `HTTP错误: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('分析后端返回数据:', data); // 打印完整的后端响应到控制台
+                
+                // 添加更详细的调试输出
+                console.log('后端返回的p_picks数据:', JSON.stringify(data.p_picks));
+                console.log('后端返回的s_picks数据:', JSON.stringify(data.s_picks));
+
+                resultsDisplay.innerHTML = ''; // 清空之前的显示
+
+                if (data.status === 'success') {
+                    let reportHtml = '<h3>分析成功!</h3>';
+                    reportHtml += '<p>分析报告:</p>';
+                    reportHtml += `<pre>${data.report.report_content}</pre>`; // 直接显示报告内容
+
+                    if (data.waveform_data && data.waveform_data.traces && data.waveform_data.traces.length > 0) {
+                        displayWaveform(uploadedFilePath, data.p_picks || [], data.s_picks || [], data.waveform_data);
+                    } else {
+                        // 如果没有新的波形数据，但有旧的filePath，尝试重新获取
+                        displayWaveform(uploadedFilePath, data.p_picks || [], data.s_picks || []);
+                    }
+                    resultsDisplay.innerHTML = reportHtml;
+
+                } else if (data.status === 'error') {
+                    resultsDisplay.innerHTML = `<p style="color: red;">分析失败: ${data.message}</p>`;
+                }
+            } catch (error) {
+                console.error('分析失败:', error);
+                resultsDisplay.innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        分析请求失败: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // *** 开始分析按钮的点击事件 ***
+        document.getElementById('analyzeButton').addEventListener('click', performAnalysis);
+
+        // *** 用户查询输入框的回车事件监听 ***
+        document.getElementById('userQueryInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) { // 阻止 Shift + Enter 换行
+                event.preventDefault(); // 阻止默认的回车行为
+                performAnalysis(); // 调用分析函数
+            }
+        });
+
+        // *** 现有波形显示函数 (保持不变或微调) ***
+        function displayWaveform(filePath, pPicks, sPicks, initialWaveformData = null) {
+            let waveformPromise;
+
+            // 添加调试输出
+            console.log('displayWaveform函数接收到的参数:');
+            console.log('filePath:', filePath);
+            console.log('pPicks:', JSON.stringify(pPicks));
+            console.log('sPicks:', JSON.stringify(sPicks));
+            console.log('initialWaveformData:', initialWaveformData ? '有数据' : '无数据');
+
+            if (initialWaveformData && initialWaveformData.traces && initialWaveformData.traces.length > 0) {
+                // 如果直接提供了波形数据，则使用它
+                const traceData = initialWaveformData.traces[0]; // 假设只绘制第一个通道
+                waveformPromise = Promise.resolve({
+                    status: 'success',
+                    data: {
+                        times: Array.from({ length: traceData.npts }, (v, i) => i * traceData.delta), // 从采样率和点数重建时间轴
+                        amplitudes: traceData.data,
+                        sampling_rate: traceData.sampling_rate,
+                        starttime: traceData.start_time
+                    }
+                });
+            } else {
+                // 否则，从后端获取波形数据
+                waveformPromise = fetch(`/api/waveform_data?file=${encodeURIComponent(filePath)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.message || `HTTP错误: ${response.status} ${response.statusText}`);
+                            }).catch(() => {
+                                throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
+                            });
+                        }
+                        return response.json();
+                    });
+            }
+
+            waveformPromise
+                .then(data => {
+                    if (data.status === 'success') {
+                        const times = data.data.times; // 这通常是相对于波形开始的秒数
+                        const amplitudes = data.data.amplitudes;
+                        const waveformStartTime = new Date(data.data.starttime).getTime(); // 波形起始时间的UTC毫秒
+
+                        const trace = {
+                            x: times,
+                            y: amplitudes,
+                            mode: 'lines',
+                            name: '波形',
+                            line: { color: 'blue' }
+                        };
+
+                        const plotData = [trace];
+                        const annotations = [];
+                        const shapes = [];
+
+                        const maxAbsAmplitude = Math.max(...amplitudes.map(Math.abs));
+                        const yRange = maxAbsAmplitude * 1.2;
+
+                        // 绘制P波拾取标记
+                        pPicks.forEach(pick => {
+                            if (!pick || !pick.time) {
+                                console.error('无效的P波拾取数据:', pick);
+                                return; // 跳过无效的拾取数据
+                            }
+                            const pickAbsoluteTime = new Date(pick.time).getTime(); // P波拾取的UTC毫秒
+                            const pickRelativeTime = (pickAbsoluteTime - waveformStartTime) / 1000; // 相对于波形起始时间的秒数
+                            console.log(`P波拾取: 时间=${pick.time}, 绝对时间=${pickAbsoluteTime}, 相对时间=${pickRelativeTime.toFixed(2)}s`);
+                            
+                            annotations.push({
+                                x: pickRelativeTime,
+                                y: yRange,
+                                xref: 'x',
+                                yref: 'y',
+                                text: `P: ${pickRelativeTime.toFixed(2)}s`,
+                                showarrow: true,
+                                arrowhead: 2,
+                                arrowsize: 1,
+                                arrowwidth: 1,
+                                arrowcolor: 'red',
+                                font: { color: 'red', size: 12 },
+                                ax: 0,
+                                ay: -50
+                            });
+                            shapes.push({
+                                type: 'line',
+                                x0: pickRelativeTime,
+                                y0: -yRange,
+                                x1: pickRelativeTime,
+                                y1: yRange,
+                                xref: 'x',
+                                yref: 'y',
+                                line: {
+                                    color: 'red',
+                                    width: 2,
+                                    dash: 'dot'
+                                }
+                            });
+                        });
+
+                        // 绘制S波拾取标记
+                        sPicks.forEach(pick => {
+                            if (!pick || !pick.time) {
+                                console.error('无效的S波拾取数据:', pick);
+                                return; // 跳过无效的拾取数据
+                            }
+                            const pickAbsoluteTime = new Date(pick.time).getTime(); // S波拾取的UTC毫秒
+                            const pickRelativeTime = (pickAbsoluteTime - waveformStartTime) / 1000; // 相对于波形起始时间的秒数
+                            console.log(`S波拾取: 时间=${pick.time}, 绝对时间=${pickAbsoluteTime}, 相对时间=${pickRelativeTime.toFixed(2)}s`);
+                            
+                            annotations.push({
+                                x: pickRelativeTime,
+                                y: yRange,
+                                xref: 'x',
+                                yref: 'y',
+                                text: `S: ${pickRelativeTime.toFixed(2)}s`,
+                                showarrow: true,
+                                arrowhead: 2,
+                                arrowsize: 1,
+                                arrowwidth: 1,
+                                arrowcolor: 'green',
+                                font: { color: 'green', size: 12 },
+                                ax: 0,
+                                ay: -80
+                            });
+                            shapes.push({
+                                type: 'line',
+                                x0: pickRelativeTime,
+                                y0: -yRange,
+                                x1: pickRelativeTime,
+                                y1: yRange,
+                                xref: 'x',
+                                yref: 'y',
+                                line: {
+                                    color: 'green',
+                                    width: 2,
+                                    dash: 'dot'
+                                }
+                            });
+                        });
+
+                        const layout = {
+                            title: '地震波形图',
+                            xaxis: { title: '时间 (秒)' },
+                            yaxis: { title: '振幅', range: [-yRange, yRange] },
+                            hovermode: 'closest',
+                            annotations: annotations,
+                            shapes: shapes,
+                            margin: { t: 50, b: 50, l: 50, r: 50 }
+                        };
+
+                        console.log('Plotly Trace:', trace);
+                        console.log('Plotly Data:', plotData);
+                        console.log('Plotly Layout:', layout);
+                        console.log('P波拾取 Annotations:', annotations);
+                        console.log('P波拾取 Shapes:', shapes);
+
+                        const waveformDisplayDiv = document.getElementById('waveformDisplay');
+                        waveformDisplayDiv.innerHTML = '';
+
+                        try {
+                            Plotly.newPlot(waveformDisplayDiv, plotData, layout);
+                            console.log('Plotly.newPlot called successfully.');
+                        } catch (plotError) {
+                            console.error('Plotly 绘制错误:', plotError);
+                            alert('波形图绘制失败: ' + plotError.message);
+                            waveformDisplayDiv.innerHTML = `<p style="color: red;">波形图绘制失败: ${plotError.message}</p>`;
+                        }
+
+                    } else {
+                        alert('加载波形数据失败: ' + data.message);
+                        document.getElementById('waveformDisplay').innerHTML = `<p style="color: red;">加载波形数据失败: ${data.message}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('获取波形数据错误:', error);
+                    alert('获取波形数据失败: ' + error.message);
+                    document.getElementById('waveformDisplay').innerHTML = `<p style="color: red;">获取波形数据失败: ${error.message}</p>`;
+                });
+        }
+
+        socket.on('connect', function() {
+            console.log('Connected to WebSocket');
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from WebSocket');
+        });
+    </script>
+</body>
+</html> 
